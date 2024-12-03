@@ -1,3 +1,7 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
 scalar Upload
 scalar Timestamp
 
@@ -78,3 +82,4 @@ input NewSharedFile {
 type Mutations {
   uploadFile(newSharedFile: NewSharedFile!): SharedFile!
 }
+

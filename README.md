@@ -15,6 +15,7 @@ PostGres
 GraphQL
 - More efficient than REST but maybe a bit overkill
 - Somewhat Popular
+- Automate everything
 - I want to learn it
 - Alternatives: REST api
 
