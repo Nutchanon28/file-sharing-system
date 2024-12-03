@@ -1,0 +1,80 @@
+scalar Upload
+scalar Timestamp
+
+# Enum for User Roles
+enum Role {
+  User
+  Admin
+}
+
+# Enum for SharedFile Statuses
+enum Status {
+  Private
+  AdminOnly
+  DepartmentOnly
+  Public
+}
+
+# User Entity
+type User {
+  id: ID!
+  role: Role!
+  name: String!
+  surname: String!
+  email: String!
+  mobile: String!
+  departmentId: ID!
+  department: Department! # Reference to Department
+  sharedFiles: [SharedFile] # List of shared files uploaded by this user
+}
+
+# Department Entity
+type Department {
+  id: ID!
+  name: String!
+  facultyId: ID!
+  faculty: Faculty! # Reference to Faculty
+  users: [User] # List of users in this department
+}
+
+# Faculty Entity
+type Faculty {
+  id: ID!
+  name: String!
+  departments: [Department!]! # List of departments in this faculty
+}
+
+# SharedFile Entity
+type SharedFile {
+  id: ID!
+  status: Status!
+  name: String!
+  fileUrl: String!
+  createdBy: User! # User who uploaded the file
+  createdAt: Timestamp! # Timestamp of when the file was created
+  updatedAt: Timestamp! # Timestamp of when the file was last updated
+}
+
+# Queries
+type Query {
+  users: [User!]!
+  departments: [Department!]!
+  faculties: [Faculty!]!
+  sharedFiles: [SharedFile!]!
+
+  getUser(id: ID!): User
+  getDepartment(id: ID!): Department
+  getFaculty(id: ID!): Faculty
+  getSharedFile(id: ID!): SharedFile
+}
+
+input NewSharedFile {
+  status: Status!
+  name: String!
+  file: Upload!
+  userId: ID! # ID of User who uploaded the file
+}
+
+type Mutations {
+  uploadFile(newSharedFile: NewSharedFile!): Boolean!
+}

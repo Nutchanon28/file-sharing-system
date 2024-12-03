@@ -8,8 +8,21 @@ User Story: As a professor in a department in a certain university, I want a fil
 
 # Tech Stack and Why?
 
-Go Echo
-- Selected by most developers in Thailand
-
 PostGres
 - Selected by most developers
+- Alternatives: other DBMS
+
+GraphQL
+- More efficient than REST but maybe a bit overkill
+- Somewhat Popular
+- I want to learn it
+- Alternatives: REST api
+
+gqlgen
+- Popular go graphql library
+- Alternatives: apollo-server
+
+Minio
+- Free file storage
+- Popular, easy to use
+- Alternatives: Amazon S3
