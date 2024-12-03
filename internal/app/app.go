@@ -7,16 +7,20 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/Nutchanon28/file-sharing-system/config"
 	"github.com/labstack/echo/v4"
 )
 
 type App struct {
-	echo *echo.Echo
+	echo   *echo.Echo
+	config *config.Config
 }
 
-func NewApp() *App {
+// TODO: can't you just import the config? It's not like there's any other config anyways?
+func NewApp(config *config.Config) *App {
 	return &App{
-		echo: echo.New(),
+		echo:   echo.New(),
+		config: config,
 	}
 }
 
@@ -30,9 +34,11 @@ func (a *App) Run() error {
 	// since go echo start with concurrency
 	defer stop()
 
+	serverUrl := fmt.Sprintf(":%d", a.config.Port)
+
 	// goroutine concurrent -> start the server without interrupting other stuff
 	go func() {
-		if err := a.echo.Start(":8080"); err != nil && err != http.ErrServerClosed {
+		if err := a.echo.Start(serverUrl); err != nil && err != http.ErrServerClosed {
 			fmt.Println("shutting down the server")
 		}
 	}()
