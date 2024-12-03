@@ -1,7 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Nutchanon28/file-sharing-system/internal/app"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	app := app.NewApp()
+	if err := app.Run(); err != nil {
+		fmt.Printf("server failed to run: %v", err)
+	}
 }
