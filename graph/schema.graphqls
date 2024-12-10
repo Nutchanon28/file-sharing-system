@@ -79,7 +79,6 @@ input NewSharedFile {
   userId: ID! # ID of User who uploaded the file
 }
 
-type Mutations {
+type Mutation {
   uploadFile(newSharedFile: NewSharedFile!): SharedFile!
 }
-

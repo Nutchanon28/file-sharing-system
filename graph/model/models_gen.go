@@ -24,8 +24,7 @@ type Faculty struct {
 	Departments []*Department `json:"departments"`
 }
 
-type Mutations struct {
-	UploadFile *SharedFile `json:"uploadFile"`
+type Mutation struct {
 }
 
 type NewSharedFile struct {

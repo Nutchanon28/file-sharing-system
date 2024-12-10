@@ -1,20 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"net/http"
+	"os"
 
-	"github.com/Nutchanon28/file-sharing-system/config"
-	"github.com/Nutchanon28/file-sharing-system/internal/app"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/Nutchanon28/file-sharing-system/graph"
+	"github.com/Nutchanon28/file-sharing-system/graph/model"
 )
 
+const defaultPort = "8080"
+
 func main() {
-	config, err := config.LoadConfig()
-	if err != nil {
-		fmt.Printf("Failed to load config: %v", err)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
 	}
 
-	app := app.NewApp(config)
-	if err := app.Run(); err != nil {
-		fmt.Printf("server failed to run: %v", err)
-	}
+	// ... our fake DB
+	sharedFiles := []*model.SharedFile{}
+
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(
+		graph.Config{
+			Resolvers: &graph.Resolver{
+				SharedFilesList: sharedFiles,
+			},
+		},
+	))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

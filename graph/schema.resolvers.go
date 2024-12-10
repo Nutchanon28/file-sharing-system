@@ -9,7 +9,27 @@ import (
 	"fmt"
 
 	"github.com/Nutchanon28/file-sharing-system/graph/model"
+	"github.com/google/uuid"
 )
+
+// UploadFile is the resolver for the uploadFile field.
+func (r *mutationResolver) UploadFile(ctx context.Context, newSharedFile model.NewSharedFile) (*model.SharedFile, error) {
+	id := uuid.New().String()
+
+	sharedFile := model.SharedFile{
+		ID:        id,
+		Status:    newSharedFile.Status,
+		Name:      newSharedFile.Name,
+		FileURL:   "some test",
+		CreatedBy: nil,
+		// FileURL:   newSharedFile.File,
+		// CreatedBy: newSharedFile.UserID,
+	}
+
+	r.SharedFilesList = append(r.SharedFilesList, &sharedFile)
+
+	return &sharedFile, nil
+}
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
@@ -28,7 +48,7 @@ func (r *queryResolver) Faculties(ctx context.Context) ([]*model.Faculty, error)
 
 // SharedFiles is the resolver for the sharedFiles field.
 func (r *queryResolver) SharedFiles(ctx context.Context) ([]*model.SharedFile, error) {
-	panic(fmt.Errorf("not implemented: SharedFiles - sharedFiles"))
+	return r.SharedFilesList, nil
 }
 
 // GetUser is the resolver for the getUser field.
@@ -51,24 +71,11 @@ func (r *queryResolver) GetSharedFile(ctx context.Context, id string) (*model.Sh
 	panic(fmt.Errorf("not implemented: GetSharedFile - getSharedFile"))
 }
 
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
-}
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
-}
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 type mutationResolver struct{ *Resolver }
-*/
+type queryResolver struct{ *Resolver }

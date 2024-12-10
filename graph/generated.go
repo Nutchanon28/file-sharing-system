@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -60,7 +61,7 @@ type ComplexityRoot struct {
 		Name        func(childComplexity int) int
 	}
 
-	Mutations struct {
+	Mutation struct {
 		UploadFile func(childComplexity int, newSharedFile model.NewSharedFile) int
 	}
 
@@ -98,6 +99,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type MutationResolver interface {
+	UploadFile(ctx context.Context, newSharedFile model.NewSharedFile) (*model.SharedFile, error)
+}
 type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
 	Departments(ctx context.Context) ([]*model.Department, error)
@@ -184,17 +188,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Faculty.Name(childComplexity), true
 
-	case "Mutations.uploadFile":
-		if e.complexity.Mutations.UploadFile == nil {
+	case "Mutation.uploadFile":
+		if e.complexity.Mutation.UploadFile == nil {
 			break
 		}
 
-		args, err := ec.field_Mutations_uploadFile_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_uploadFile_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutations.UploadFile(childComplexity, args["newSharedFile"].(model.NewSharedFile)), true
+		return e.complexity.Mutation.UploadFile(childComplexity, args["newSharedFile"].(model.NewSharedFile)), true
 
 	case "Query.departments":
 		if e.complexity.Query.Departments == nil {
@@ -427,6 +431,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 
 			return &response
 		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -494,17 +513,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutations_uploadFile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_uploadFile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	arg0, err := ec.field_Mutations_uploadFile_argsNewSharedFile(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_uploadFile_argsNewSharedFile(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["newSharedFile"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Mutations_uploadFile_argsNewSharedFile(
+func (ec *executionContext) field_Mutation_uploadFile_argsNewSharedFile(
 	ctx context.Context,
 	rawArgs map[string]interface{},
 ) (model.NewSharedFile, error) {
@@ -1075,8 +1094,8 @@ func (ec *executionContext) fieldContext_Faculty_departments(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutations_uploadFile(ctx context.Context, field graphql.CollectedField, obj *model.Mutations) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutations_uploadFile(ctx, field)
+func (ec *executionContext) _Mutation_uploadFile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_uploadFile(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1089,7 +1108,7 @@ func (ec *executionContext) _Mutations_uploadFile(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UploadFile, nil
+		return ec.resolvers.Mutation().UploadFile(rctx, fc.Args["newSharedFile"].(model.NewSharedFile))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1106,12 +1125,12 @@ func (ec *executionContext) _Mutations_uploadFile(ctx context.Context, field gra
 	return ec.marshalNSharedFile2ᚖgithubᚗcomᚋNutchanon28ᚋfileᚑsharingᚑsystemᚋgraphᚋmodelᚐSharedFile(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutations_uploadFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_uploadFile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Mutations",
+		Object:     "Mutation",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -1139,7 +1158,7 @@ func (ec *executionContext) fieldContext_Mutations_uploadFile(ctx context.Contex
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutations_uploadFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_uploadFile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4454,19 +4473,29 @@ func (ec *executionContext) _Faculty(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var mutationsImplementors = []string{"Mutations"}
+var mutationImplementors = []string{"Mutation"}
 
-func (ec *executionContext) _Mutations(ctx context.Context, sel ast.SelectionSet, obj *model.Mutations) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, mutationsImplementors)
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Mutations")
+			out.Values[i] = graphql.MarshalString("Mutation")
 		case "uploadFile":
-			out.Values[i] = ec._Mutations_uploadFile(ctx, field, obj)
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_uploadFile(ctx, field)
+			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5329,6 +5358,10 @@ func (ec *executionContext) unmarshalNRole2githubᚗcomᚋNutchanon28ᚋfileᚑs
 
 func (ec *executionContext) marshalNRole2githubᚗcomᚋNutchanon28ᚋfileᚑsharingᚑsystemᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v model.Role) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNSharedFile2githubᚗcomᚋNutchanon28ᚋfileᚑsharingᚑsystemᚋgraphᚋmodelᚐSharedFile(ctx context.Context, sel ast.SelectionSet, v model.SharedFile) graphql.Marshaler {
+	return ec._SharedFile(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNSharedFile2ᚕᚖgithubᚗcomᚋNutchanon28ᚋfileᚑsharingᚑsystemᚋgraphᚋmodelᚐSharedFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SharedFile) graphql.Marshaler {
