@@ -48,6 +48,7 @@ func (r *queryResolver) Faculties(ctx context.Context) ([]*model.Faculty, error)
 
 // SharedFiles is the resolver for the sharedFiles field.
 func (r *queryResolver) SharedFiles(ctx context.Context) ([]*model.SharedFile, error) {
+	fmt.Println("get all shared files ran")
 	return r.SharedFilesList, nil
 }
 

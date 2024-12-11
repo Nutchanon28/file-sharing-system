@@ -9,9 +9,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/Nutchanon28/file-sharing-system/graph"
 	"github.com/Nutchanon28/file-sharing-system/graph/model"
+	"github.com/Nutchanon28/file-sharing-system/internal/middlewares"
 )
 
-const defaultPort = "8080"
+const defaultPort = "4000"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -33,6 +34,9 @@ func main() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
+	// Wrap the default mux with the CORS middleware
+	handler := middlewares.Cors(http.DefaultServeMux)
+
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
