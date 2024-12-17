@@ -7,22 +7,67 @@ package graph
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/Nutchanon28/file-sharing-system/graph/model"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 )
 
 // UploadFile is the resolver for the uploadFile field.
 func (r *mutationResolver) UploadFile(ctx context.Context, newSharedFile model.NewSharedFile) (*model.SharedFile, error) {
+	// Generate a unique filename
 	id := uuid.New().String()
+	// uniqueFilename := fmt.Sprintf("%s-%s", id, newSharedFile.File.Filename)
+
+	// Create a temporary file to store the uploaded data
+	tmpfile, err := os.CreateTemp("/tmp", "testdata")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	defer func() {
+		tmpfile.Close()
+		if err != nil {
+			os.Remove(tmpfile.Name())
+		}
+	}()
+
+	// Write the uploaded file content to the temp file
+	_, err = io.Copy(tmpfile, newSharedFile.File.File) // Assuming `newSharedFile.File.File` is the uploaded file's reader
+	if err != nil {
+		return nil, fmt.Errorf("failed to write file content to temp file: %w", err)
+	}
+
+	// Upload the test file
+	// Change the value of filePath if the file is in another location
+	objectName := "cringe.jpeg"
+	// Hey ChatGPT, there's an error: open /tmp/testdata: no such file or directory
+	// filePath := "/tmp/testdata"
+	contentType := "application/octet-stream"
+
+	// Upload the test file with FPutObject
+	info, err := r.MinioClient.FPutObject(ctx, "cng", objectName, tmpfile.Name(), minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	fmt.Println("info is ", info)
+
+	fileUrl, err := r.MinioUseCase.GetPresignedUrl(ctx, objectName)
+
+	if err != nil {
+		return nil, err
+	}
 
 	sharedFile := model.SharedFile{
 		ID:        id,
 		Status:    newSharedFile.Status,
 		Name:      newSharedFile.Name,
-		FileURL:   "some test",
+		FileURL:   *fileUrl,
 		CreatedBy: nil,
-		// FileURL:   newSharedFile.File,
 		// CreatedBy: newSharedFile.UserID,
 	}
 

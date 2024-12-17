@@ -1,6 +1,10 @@
 package graph
 
-import "github.com/Nutchanon28/file-sharing-system/graph/model"
+import (
+	"github.com/Nutchanon28/file-sharing-system/graph/model"
+	minioInterfaces "github.com/Nutchanon28/file-sharing-system/pkg/database/minio/interfaces"
+	"github.com/minio/minio-go/v7"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -10,4 +14,6 @@ import "github.com/Nutchanon28/file-sharing-system/graph/model"
 
 type Resolver struct {
 	SharedFilesList []*model.SharedFile
+	MinioUseCase    minioInterfaces.MinioUseCase
+	MinioClient     *minio.Client
 }
